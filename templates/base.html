@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Список изображений</title>
+</head>
+<body>
+<h1>Список изображений</h1>
+{% block content %}
+    {% if images %}
+        {% for image in images %}
+            <img src="{{ image.current.path }}">
+            <br/>
+            <br/>
+        {% endfor %}
+    {% else %}
+        Нет доступных изображений
+    {% endif %}
+    <br/>
+    <br/>
+    <a href="/upload/">Добавить изображение</a>
+{% endblock %}
+</body>
+</html>
