@@ -2,6 +2,7 @@ from django.views.generic import View
 
 from .models import Customer
 
+
 class DetectedCustomerMixin(View):
 
     def dispatch(self, request, *args, **kwargs):

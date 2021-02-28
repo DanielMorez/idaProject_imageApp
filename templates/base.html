@@ -9,7 +9,7 @@
 {% block content %}
     {% if images %}
         {% for image in images %}
-            <img src="{{ image.current.path }}">
+            <a href="{{ image.absolute_url }}">{{ image.title }}</a>
             <br/>
             <br/>
         {% endfor %}

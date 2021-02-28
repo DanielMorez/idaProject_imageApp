@@ -1,10 +1,10 @@
 from django.shortcuts import render
-from django.views.generic import View
+from django.db import transaction
 
 from .models import Image
 from .mixin import DetectedCustomerMixin
-from .forms import ImageForm
-
+from .forms import ImageForm, ChangeImageSizeForm
+from .utils import get_remote_image, resize_image
 
 class MainPageView(DetectedCustomerMixin):
 
@@ -17,13 +17,54 @@ class MainPageView(DetectedCustomerMixin):
 
 class UploadImageView(DetectedCustomerMixin):
 
+    form = ImageForm
+    success_form = ChangeImageSizeForm
+
     def get(self, request, *args, **kwargs):
-        return render(request, 'upload.html')
+        """ Форма для загрузки изображения """
+        return render(request, 'upload.html', {'form': self.form()})
+
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        """ Загрузка изображения """
+        form = self.form(request.POST, request.FILES)
+        if form.is_valid():
+            # Если загружен файл
+            if form.cleaned_data['image_file']:
+                image_file = form.cleaned_data['image_file']
+                title = form.cleaned_data['image_file'].name
+            # Если загружена ссылка на изображение
+            else:
+                # Если ссылка на изображение валидна
+                image_file, title = get_remote_image(form.cleaned_data['image_url'])
+            # Если есть, что сохранять, то сохраняем. Иначе возвращаем пустую форму.
+            if image_file and title:
+                image = Image(
+                    title=title,
+                    owner=self.owner,
+                )
+                image.origin.save(title, image_file) # сохраним оригинал
+                image.current.save(title, image_file) # редактируемое изображение
+                image.save()
+                return render(request, 'changer.html', {'image': image, 'form': self.succes_form()})
+        return render(request, 'upload.html', {'form': self.form()})
+
+
+class ChangeImageSizeView(DetectedCustomerMixin):
+
+    form = ChangeImageSizeForm
+
+    def get(self, request, *args, **kwargs):
+        image = Image.objects.filter(id=kwargs['image_id']).first()
+        access = image.owner.id == self.owner.id
+        return render(request, 'changer.html', {'form': self.form(), 'image': image, 'access': access})
 
     def post(self, request, *args, **kwargs):
-        form = ImageForm(request.POST or None)
-        if form.is_valid():
-
-            return render(request, 'upload.html')
-        else:
-            return render(request, 'upload.html')
+        image = Image.objects.filter(id=kwargs['image_id']).first()
+        access = self.owner.id == image.owner.id
+        if access:
+            form = self.form(request.POST)
+            if form.is_valid():
+                img = resize_image(image, (int(request.POST['width']), int(request.POST['height'])))
+                image.current.save(image.origin.name, img)
+        return render(request, 'changer.html', {'form': self.form(), 'image': image, 'access': access})

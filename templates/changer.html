@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Изменить размеры фото</title>
+</head>
+<body>
+{% extends 'upload.html' %}
+{% block content %}
+    {% if access %}
+
+        <h1>{{ image.title }}</h1>
+        <br/>
+        <br/>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Отправить</button>
+        </form>
+        <br/>
+        <br/>
+        <img src="{{ image.current.url }}">
+    {% else %}
+        <h1>Изображение принадлежит другому пользователю:(</h1>>
+    {% endif %}
+{% endblock %}
+</body>
+</html>

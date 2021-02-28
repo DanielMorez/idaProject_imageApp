@@ -7,23 +7,14 @@
 <body>
 <a href="/">Назад к списку</a>
 <br/>
+{% block content %}
 <h1>Новое изображение</h1>
 <br/>
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <label>Ссылка
-        <br>
-        <input name="image-url" type="url">
-    </label>
-    <br>
-    <br>
-    <label>Файл
-        <br>
-        <input name="image-file" type="file" accept="image/*">
-    </label>
-    <br>
-    <br>
+    {{ form.as_p }}
     <button type="submit">Отправить</button>
 </form>
+{% endblock %}
 </body>
 </html>
