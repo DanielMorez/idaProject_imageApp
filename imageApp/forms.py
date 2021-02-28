@@ -23,8 +23,8 @@ class ImageForm(forms.Form):
 
 class ChangeImageSizeForm(forms.Form):
 
-    width = forms.IntegerField(label='Ширина', required=False, min_value=20)
-    height = forms.IntegerField(label='Высота', required=False, min_value=20)
+    width = forms.IntegerField(label='Ширина', required=False)
+    height = forms.IntegerField(label='Высота', required=False)
 
     def clean(self):
         cleaned_data = super(ChangeImageSizeForm, self).clean()

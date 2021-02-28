@@ -1,3 +1,5 @@
+import os
+
 from django.shortcuts import render
 from django.db import transaction
 
@@ -30,8 +32,8 @@ class UploadImageView(DetectedCustomerMixin):
         form = self.form(request.POST, request.FILES)
         if form.is_valid():
             # Если загружен файл
-            if form.cleaned_data['image_file']:
-                image_file = form.cleaned_data['image_file']
+            image_file = form.cleaned_data['image_file']
+            if image_file:
                 title = form.cleaned_data['image_file'].name
             # Если загружена ссылка на изображение
             else:
@@ -43,10 +45,10 @@ class UploadImageView(DetectedCustomerMixin):
                     title=title,
                     owner=self.owner,
                 )
-                image.origin.save(title, image_file) # сохраним оригинал
-                image.current.save(title, image_file) # редактируемое изображение
+                image.origin.save(title, image_file)   # сохраним оригинал
+                image.current.save(title, image.origin)  # редактируемое изображение
                 image.save()
-                return render(request, 'changer.html', {'image': image, 'form': self.succes_form()})
+                    return render(request, 'changer.html', {'image': image, 'form': self.success_form(), 'access': True})
         return render(request, 'upload.html', {'form': self.form()})
 
 
@@ -54,17 +56,26 @@ class ChangeImageSizeView(DetectedCustomerMixin):
 
     form = ChangeImageSizeForm
 
+    def access(self, image):
+        return self.owner.id == image.owner.id
+
     def get(self, request, *args, **kwargs):
         image = Image.objects.filter(id=kwargs['image_id']).first()
-        access = image.owner.id == self.owner.id
+        access = self.access(image)  # Проверка на принадлежность пользователю изображения
         return render(request, 'changer.html', {'form': self.form(), 'image': image, 'access': access})
 
     def post(self, request, *args, **kwargs):
         image = Image.objects.filter(id=kwargs['image_id']).first()
-        access = self.owner.id == image.owner.id
+        access = self.access(image)
         if access:
             form = self.form(request.POST)
             if form.is_valid():
-                img = resize_image(image, (int(request.POST['width']), int(request.POST['height'])))
+                file_path = image.current.path
+                width, height = request.POST.get('width'), request.POST.get('height')
+                width = int(width) if width else 0
+                height = int(height) if height else 0
+                img = resize_image(image, (width, height))
                 image.current.save(image.origin.name, img)
+                os.remove(file_path)  # удаляем предыдущую версию
         return render(request, 'changer.html', {'form': self.form(), 'image': image, 'access': access})
+

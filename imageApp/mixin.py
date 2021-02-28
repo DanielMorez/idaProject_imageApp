@@ -12,3 +12,4 @@ class DetectedCustomerMixin(View):
             remote_addr=request.META['REMOTE_ADDR'],
         )
         return super().dispatch(request, *args, **kwargs)
+
